@@ -8,37 +8,38 @@
   <style>
     :root { --bg:#0b1220; --card:#111827; --muted:#93a4b8; --text:#e5e7eb; --accent:#60a5fa; --ok:#34d399; --warn:#fbbf24; --bad:#fb7185; }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
-    header { position:sticky; top:0; background:rgba(11,18,32,.92); backdrop-filter: blur(10px); border-bottom:1px solid rgba(255,255,255,.08); padding:14px 14px 10px; }
+    header { position:sticky; top:0; background:rgba(11,18,32,.92); backdrop-filter: blur(10px); border-bottom:1px solid rgba(255,255,255,.08); padding:14px 14px 10px; z-index:10; }
     h1 { font-size:16px; margin:0 0 10px; font-weight:700; letter-spacing:.2px; }
-    .tabs { display:flex; gap:8px; }
-    .tab { flex:1; padding:10px 12px; border-radius:12px; background:var(--card); border:1px solid rgba(255,255,255,.08); color:var(--text); font-weight:700; cursor:pointer; }
+    .tabs { display:flex; gap:8px; flex-wrap:wrap; }
+    .tab { flex:1 1 30%; padding:10px 12px; border-radius:12px; background:var(--card); border:1px solid rgba(255,255,255,.08); color:var(--text); font-weight:800; cursor:pointer; }
     .tab.active { outline:2px solid rgba(96,165,250,.45); border-color: rgba(96,165,250,.45); }
 
-    main { padding:14px; display:grid; gap:12px; max-width: 720px; margin:0 auto; }
+    main { padding:14px; display:grid; gap:12px; max-width: 820px; margin:0 auto; }
     .card { background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:12px; }
     .card h2 { margin:0 0 10px; font-size:14px; }
     .row { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
     .muted { color:var(--muted); font-size:12px; }
     .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
-    button { background:#0f172a; color:var(--text); border:1px solid rgba(255,255,255,.1); padding:10px 12px; border-radius:12px; font-weight:700; cursor:pointer; }
+    button { background:#0f172a; color:var(--text); border:1px solid rgba(255,255,255,.1); padding:10px 12px; border-radius:12px; font-weight:800; cursor:pointer; }
     button.primary { background:rgba(96,165,250,.16); border-color: rgba(96,165,250,.45); }
     button:disabled { opacity:.5; cursor:not-allowed; }
 
     table { width:100%; border-collapse:collapse; font-size:13px; }
     td, th { padding:8px 6px; border-top:1px solid rgba(255,255,255,.08); vertical-align:top; }
-    th { text-align:left; color:var(--muted); font-size:12px; font-weight:700; border-top:none; }
+    th { text-align:left; color:var(--muted); font-size:12px; font-weight:800; border-top:none; }
     .pill { display:inline-flex; align-items:center; gap:6px; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.12); }
     .pill.ok { border-color: rgba(52,211,153,.5); color: var(--ok); }
     .pill.warn { border-color: rgba(251,191,36,.6); color: var(--warn); }
     .pill.bad { border-color: rgba(251,113,133,.6); color: var(--bad); }
 
     .grid2 { display:grid; grid-template-columns: 1fr; gap:12px; }
-    @media (min-width: 640px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 780px) { .grid2 { grid-template-columns: 1fr 1fr; } }
 
     input { width:100%; box-sizing:border-box; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,.12); background:#0f172a; color:var(--text); }
     .small { font-size:12px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     .error { color: var(--bad); font-size: 12px; margin-top: 8px; }
+    .sep { height:10px; }
   </style>
 </head>
 <body>
@@ -47,6 +48,9 @@
   <div class="tabs">
     <button id="tab-home" class="tab active">Home</button>
     <button id="tab-work" class="tab">Work</button>
+    <button id="tab-hbf" class="tab">Hauptbahnhof</button>
+    <button id="tab-ost" class="tab">Ostkreuz</button>
+    <button id="tab-sw" class="tab">Schöneweide</button>
   </div>
 </header>
 
@@ -54,7 +58,7 @@
   <div class="card">
     <div class="row">
       <div>
-        <div id="modeTitle" style="font-weight:800; font-size:14px;">Home mode</div>
+        <div id="modeTitle" style="font-weight:900; font-size:14px;">Home mode</div>
         <div id="modeSubtitle" class="muted">Altglienicke buses + S-Bahn options</div>
       </div>
       <div class="btnrow">
@@ -63,36 +67,37 @@
       </div>
     </div>
     <div class="muted" style="margin-top:8px;">
-      Uses vbb.transport.rest (<span class="mono" id="apiBase"></span>). Data includes realtime delays when available.
+      Uses vbb.transport.rest (<span class="mono" id="apiBase"></span>). Times are realtime when available.
     </div>
     <div id="status" class="muted" style="margin-top:8px;"></div>
     <div id="err" class="error" style="display:none;"></div>
   </div>
 
-  <div class="grid2">
+  <div class="grid2" id="gridMain">
     <div class="card">
       <h2>Departures</h2>
-      <div class="muted">Top 3 (filtered). Times are realtime when provided.</div>
+      <div class="muted">Minimum shown is 1 minute (no 0/negative).</div>
       <div id="departures"></div>
     </div>
 
-    <div class="card">
-      <h2>Which option is better?</h2>
-      <div class="muted">Home: earliest catchable S9 → Spandau after you arrive at the S-Bahn.</div>
+    <div class="card" id="comparisonCard">
+      <h2 id="comparisonTitle">Which option is better?</h2>
+      <div class="muted" id="comparisonHint">Home: compares earliest catchable S9 → Spandau after you arrive at the S-Bahn.</div>
       <div id="comparison"></div>
     </div>
   </div>
 
   <div class="card" id="homeOnlyCard">
     <h2>What train will I catch?</h2>
-    <div class="muted">Estimates your arrival at the S-Bahn and shows departures after you arrive.</div>
+    <div class="muted">After arriving at the S-Bahn (estimated), shows the next departures you care about.</div>
     <div id="connections"></div>
     <div id="homeWork" style="margin-top:12px;"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="settingsCard">
     <h2>Settings (optional)</h2>
-    <div class="muted">Override stop names if lookup resolves wrong one.</div>
+    <div class="muted">Override stop names if lookup resolves the wrong one.</div>
+
     <div class="grid2" style="margin-top:10px;">
       <div>
         <div class="muted small">Home: primary bus stop</div>
@@ -110,72 +115,79 @@
         <div class="muted small">Home: S-Bahn target B</div>
         <input id="inHomeTargetB" value="S Altglienicke" />
       </div>
+
       <div>
         <div class="muted small">Work: S station</div>
         <input id="inWorkS" value="S Tiergarten" />
       </div>
       <div>
-        <div class="muted small">Work: Hbf</div>
-        <input id="inWorkHbf" value="Berlin Hbf" />
+        <div class="muted small">Work: walk min (work → Tiergarten)</div>
+        <input id="inWorkWalk" value="7" />
+      </div>
+
+      <div>
+        <div class="muted small">Regio mode: Hauptbahnhof name</div>
+        <input id="inRegioHbf" value="Berlin Hbf" />
+      </div>
+      <div>
+        <div class="muted small">Regio mode: Ostkreuz name</div>
+        <input id="inRegioOst" value="S Ostkreuz" />
+      </div>
+      <div>
+        <div class="muted small">Regio mode: Schöneweide name</div>
+        <input id="inRegioSW" value="S Schöneweide" />
       </div>
     </div>
+
     <div class="btnrow" style="margin-top:10px;">
       <button id="btnSave">Save</button>
       <button id="btnReset">Reset</button>
+    </div>
+
+    <div class="muted" style="margin-top:10px;">
+      Note: if some destination wording differs (e.g., “Flughafen BER - Terminal 1-2”), update the allow-lists in code or tell me the exact text.
     </div>
   </div>
 </main>
 
 <script>
   // =====================
-  // API
+  // Core config / state
   // =====================
   const API_BASE = 'https://v6.vbb.transport.rest';
   document.getElementById('apiBase').textContent = API_BASE;
 
   const state = {
-    mode: 'home',
+    mode: 'home', // home | work | hbf | ost | sw
     auto: false,
     autoTimer: null,
-    cache: new Map(),
+    cache: new Map(), // stopName -> stopId
     cfg: {
+      // Home
       homeStopA: 'Altglienicke Kirche',
       homeStopB: 'Alter Schönefelder Weg',
       homeTargetA: 'S Adlershof',
       homeTargetB: 'S Altglienicke',
+      // Home buses
+      homeLinesA: ['260','163'], // must be towards Adlershof only
+      homeLinesB: ['160'],      // must be towards Altglienicke only
+
+      // Work
       workS: 'S Tiergarten',
-      workHbf: 'Berlin Hbf',
+      workToTiergartenMin: 7,
 
-      // home buses
-      homeLinesA: ['260', '163'],
-      homeLinesB: ['160'],
-
-      // work S lines (filtered)
-      workTiergartenLines: ['S9','S 9','S7','S 7','S5','S 5','S3','S 3'],
-
-      // walking buffers
-      workToTiergartenMin: 10,
-      tiergartenToHbfMin: 8,
-
-      // work regios you care about
-      workRegioLines: ['RE2','RE 2','RE1','RE 1'],
-      workRegioDirKeywords: ['cottbus', 'frankfurt'] // Frankfurt (Oder)
+      // Regio mode stops
+      regioHbfName: 'Berlin Hbf',
+      regioOstkreuzName: 'S Ostkreuz',
+      regioSchoneweideName: 'S Schöneweide',
     }
   };
 
-  // ---------- persistence ----------
-  const LS_KEY = 'btqb_cfg_v1';
-  function loadCfg() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      state.cfg = { ...state.cfg, ...parsed };
-    } catch {}
-  }
-  function saveCfg() { localStorage.setItem(LS_KEY, JSON.stringify(state.cfg)); }
+  const LS_KEY = 'btqb_cfg_v3';
 
-  // ---------- utils ----------
+  // =====================
+  // Helpers
+  // =====================
   const $ = (id) => document.getElementById(id);
 
   function setStatus(msg) { $('status').textContent = msg; }
@@ -186,16 +198,22 @@
     el.textContent = msg;
   }
 
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"]+/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c] || c));
+  }
+
   function fmtTime(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
     return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   }
 
+  // Never show 0/negative minutes; minimum shown is 1 minute
   function minutesFromNow(iso) {
     if (!iso) return null;
     const ms = new Date(iso).getTime() - Date.now();
-    return Math.round(ms / 60000);
+    if (ms <= 0) return null;
+    return Math.max(1, Math.ceil(ms / 60000));
   }
 
   function pillClass(mins) {
@@ -205,38 +223,98 @@
     return 'ok';
   }
 
-  function escapeHtml(s) {
-    return String(s || '').replace(/[&<>"]+/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c] || c));
-  }
+  function norm(s) { return String(s || '').toUpperCase().replaceAll(' ', ''); }
 
-  const norm = (s) => String(s || '').toUpperCase().replaceAll(' ', '');
-
+  // Destination string (varies by API)
   function bestDest(d) {
-    return String(d.direction || d.destination?.name || d.trip?.destination?.name || '');
+    return String(d?.direction || d?.destination?.name || d?.trip?.destination?.name || '');
   }
 
+  function containsAny(hay, needles) {
+    const s = String(hay || '').toLowerCase();
+    return needles.some(n => s.includes(String(n).toLowerCase()));
+  }
+
+  // =====================
+  // STRICT direction filters (your requirement)
+  // =====================
+  // Home:
+  // 260/163 ONLY towards Adlershof (exclude U Rudow, Schönefeld etc.)
+  // 160 ONLY towards Altglienicke
+  function homeBusAllowed(lineName, dest) {
+    const ln = norm(lineName);
+    const d = String(dest || '');
+    if (ln === '260' || ln === '163') return containsAny(d, ['Adlershof']);
+    if (ln === '160') return containsAny(d, ['Altglienicke']);
+    return false;
+  }
+
+  // Work (Tiergarten):
+  // ONLY:
+  // S5 → Strausberg (Nord)
+  // S7 → Ahrensfelde
+  // S3 → Erkner
+  // S9 → Flughafen BER
+  function workSAllowed(lineName, dest) {
+    const ln = norm(lineName);
+    const d = String(dest || '');
+    if (ln === 'S5') return containsAny(d, ['Strausberg']);
+    if (ln === 'S7') return containsAny(d, ['Ahrensfelde']);
+    if (ln === 'S3') return containsAny(d, ['Erkner']);
+    if (ln === 'S9') return containsAny(d, ['Flughafen', 'BER', 'Terminal']);
+    return false;
+  }
+
+  // Home city-center S from Adlershof: include S8 Blankenburg explicitly
+  function adlershofCityAllowed(lineName, dest) {
+    const ln = norm(lineName);
+    const d = String(dest || '');
+    if (!['S9','S8','S85','S46'].includes(ln)) return false;
+    return containsAny(d, ['Spandau', 'Birkenwerder', 'Westend', 'Pankow', 'Blankenburg']);
+  }
+
+  // Altglienicke S-board: show S9 and S85 if present (but still only “city-ish” directions)
+  function altglienickeAllowed(lineName, dest) {
+    const ln = norm(lineName);
+    const d = String(dest || '');
+    if (!['S9','S85'].includes(ln)) return false;
+    return containsAny(d, ['Spandau', 'Pankow', 'Westend', 'Birkenwerder', 'Blankenburg']);
+  }
+
+  // =====================
+  // Persistence
+  // =====================
+  function loadCfg() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      state.cfg = { ...state.cfg, ...parsed };
+    } catch {}
+  }
+  function saveCfg() { localStorage.setItem(LS_KEY, JSON.stringify(state.cfg)); }
+
+  // =====================
+  // API
+  // =====================
   async function fetchJson(url) {
     const res = await fetch(url, { headers: { 'accept': 'application/json' } });
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
     return await res.json();
   }
 
-  // v6 stop lookup via /locations
   async function resolveStopId(name) {
     if (!name || !name.trim()) throw new Error('Empty stop name');
     const key = name.trim();
     if (state.cache.has(key)) return state.cache.get(key);
 
+    // v6: /locations works reliably
     const q = encodeURIComponent(key);
     const url = `${API_BASE}/locations?query=${q}&stops=true&poi=false&addresses=false&results=10&fuzzy=true`;
     const arr = await fetchJson(url);
+    if (!Array.isArray(arr) || arr.length === 0) throw new Error(`No station found for: ${key}`);
 
-    if (!Array.isArray(arr) || arr.length === 0) throw new Error(`No result for: ${key}`);
-
-    const stopish =
-      arr.find(x => x && (x.type === 'stop' || x.type === 'station')) ||
-      arr[0];
-
+    const stopish = arr.find(x => (x.type === 'stop' || x.type === 'station')) || arr[0];
     const id = stopish?.id;
     if (!id) throw new Error(`No id for: ${key}`);
 
@@ -244,7 +322,7 @@
     return id;
   }
 
-  async function getDepartures(stopId, { results = 20, duration = 40, directionId = null, busOnly = false } = {}) {
+  async function getDepartures(stopId, { results = 120, duration = 180, busOnly = false } = {}) {
     const params = new URLSearchParams();
     params.set('results', String(results));
     params.set('duration', String(duration));
@@ -257,29 +335,36 @@
       params.set('express', 'false');
       params.set('regional', 'false');
     }
-    if (directionId) params.set('direction', directionId);
-
     const url = `${API_BASE}/stops/${encodeURIComponent(stopId)}/departures?${params.toString()}`;
     const resp = await fetchJson(url);
     if (Array.isArray(resp)) return resp;
     return resp?.departures || [];
   }
 
-  async function getJourneys(fromId, toId, { results = 1, departure = null } = {}) {
+  async function getJourneys(fromId, toId, { results = 1 } = {}) {
     const params = new URLSearchParams();
     params.set('from', fromId);
     params.set('to', toId);
     params.set('results', String(results));
-    if (departure) params.set('departure', departure);
     const url = `${API_BASE}/journeys?${params.toString()}`;
     return await fetchJson(url);
   }
 
+  // =====================
+  // Rendering
+  // =====================
   function renderDepartureTable(title, deps) {
-    if (!deps || deps.length === 0) {
-      return `<div class="muted">${title}: no departures found.</div>`;
+    const filtered = (deps || []).filter(d => {
+      const when = d.when || d.plannedWhen;
+      const mins = minutesFromNow(when);
+      return mins != null && mins >= 1;
+    });
+
+    if (!filtered.length) {
+      return `<div class="muted">${escapeHtml(title)}: no upcoming departures found.</div>`;
     }
-    const rows = deps.map(d => {
+
+    const rows = filtered.map(d => {
       const when = d.when || d.plannedWhen;
       const mins = minutesFromNow(when);
       const line = d.line?.name || '—';
@@ -287,14 +372,17 @@
       const plat = d.platform ? `Pl. ${d.platform}` : '';
       return `
         <tr>
-          <td style="width:64px;"><span class="pill ${pillClass(mins)}">${mins ?? '—'} min</span></td>
-          <td><div><b>${escapeHtml(line)}</b> → ${escapeHtml(dir)}</div><div class="muted">${fmtTime(when)} ${escapeHtml(plat)}</div></td>
+          <td style="width:64px;"><span class="pill ${pillClass(mins)}">${mins} min</span></td>
+          <td>
+            <div><b>${escapeHtml(line)}</b> → ${escapeHtml(dir)}</div>
+            <div class="muted">${fmtTime(when)} ${escapeHtml(plat)}</div>
+          </td>
         </tr>
       `;
     }).join('');
 
     return `
-      <div class="muted" style="margin:6px 0 8px;">${title}</div>
+      <div class="muted" style="margin:6px 0 8px;">${escapeHtml(title)}</div>
       <table>
         <thead><tr><th>In</th><th>Service</th></tr></thead>
         <tbody>${rows}</tbody>
@@ -303,12 +391,13 @@
   }
 
   // =====================
-  // HOME MODE
+  // Modes
   // =====================
+
   async function loadHome() {
     const cfg = state.cfg;
 
-    // Resolve ids
+    // resolve ids
     const [stopA, stopB, sAdlershof, sAltglienicke] = await Promise.all([
       resolveStopId(cfg.homeStopA),
       resolveStopId(cfg.homeStopB),
@@ -316,21 +405,30 @@
       resolveStopId(cfg.homeTargetB),
     ]);
 
-    // Bus departures at both stops
+    // BUS departures: filter by line + strict destination rule
     const [depsAAll, depsBAll] = await Promise.all([
-      getDepartures(stopA, { busOnly: true, results: 60, duration: 60 }),
-      getDepartures(stopB, { busOnly: true, results: 60, duration: 60 }),
+      getDepartures(stopA, { busOnly: true, results: 80, duration: 120 }),
+      getDepartures(stopB, { busOnly: true, results: 80, duration: 120 }),
     ]);
 
-    const depsA = (depsAAll || []).filter(d => cfg.homeLinesA.includes(d.line?.name)).slice(0, 3);
-    const depsB = (depsBAll || []).filter(d => cfg.homeLinesB.includes(d.line?.name)).slice(0, 3);
+    const depsA = (depsAAll || [])
+      .filter(d => cfg.homeLinesA.includes(d.line?.name))
+      .filter(d => homeBusAllowed(d.line?.name, bestDest(d)))
+      .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen))
+      .slice(0, 6);
+
+    const depsB = (depsBAll || [])
+      .filter(d => cfg.homeLinesB.includes(d.line?.name))
+      .filter(d => homeBusAllowed(d.line?.name, bestDest(d)))
+      .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen))
+      .slice(0, 6);
 
     $('departures').innerHTML =
-      renderDepartureTable(`${cfg.homeStopA}: lines ${cfg.homeLinesA.join(', ')}`, depsA)
-      + `<div style="height:10px"></div>`
-      + renderDepartureTable(`${cfg.homeStopB}: line ${cfg.homeLinesB.join(', ')}`, depsB);
+      renderDepartureTable(`${cfg.homeStopA}: 260/163 → Adlershof only`, depsA)
+      + `<div class="sep"></div>`
+      + renderDepartureTable(`${cfg.homeStopB}: 160 → Altglienicke only`, depsB);
 
-    // Journeys to S stations (arrival estimates)
+    // Journeys: bus stop -> target S station
     const [jAtoAdl, jBtoAlt] = await Promise.all([
       getJourneys(stopA, sAdlershof, { results: 1 }),
       getJourneys(stopB, sAltglienicke, { results: 1 }),
@@ -339,77 +437,68 @@
     const arriveAdlershofIso = jAtoAdl?.journeys?.[0]?.legs?.at(-1)?.arrival || null;
     const arriveAltglienickeIso = jBtoAlt?.journeys?.[0]?.legs?.at(-1)?.arrival || null;
 
-    // Departures from S stations
+    const arrAdlMs = arriveAdlershofIso ? new Date(arriveAdlershofIso).getTime() : null;
+    const arrAltMs = arriveAltglienickeIso ? new Date(arriveAltglienickeIso).getTime() : null;
+
+    // S departures after arrival
     const [adlDepsAll, altDepsAll] = await Promise.all([
-      getDepartures(sAdlershof, { results: 120, duration: 120 }),
-      getDepartures(sAltglienicke, { results: 120, duration: 120 }),
+      getDepartures(sAdlershof, { busOnly: false, results: 240, duration: 240 }),
+      getDepartures(sAltglienicke, { busOnly: false, results: 240, duration: 240 }),
     ]);
 
-    // From Adlershof: show S9/S8/S85 towards city-center-ish directions
     const adlCity = (adlDepsAll || [])
       .filter(d => d.line?.product === 'suburban')
-      .filter(d => ['S9','S8','S85'].includes(norm(d.line?.name)))
+      .filter(d => adlershofCityAllowed(d.line?.name, bestDest(d)))
       .filter(d => {
-        const dest = bestDest(d).toLowerCase();
-        return dest.includes('spandau') || dest.includes('birkenwerder') || dest.includes('westend') || dest.includes('pankow');
+        const t = new Date(d.when || d.plannedWhen).getTime();
+        return arrAdlMs ? (t > arrAdlMs) : (t > Date.now());
       })
-      .filter(d => !arriveAdlershofIso || new Date(d.when || d.plannedWhen).getTime() >= new Date(arriveAdlershofIso).getTime())
       .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen))
       .slice(0, 5);
 
-    // From Altglienicke: show S9, prefer destination Spandau, but never hide S9 completely
-    const altAfterArr = (altDepsAll || [])
+    const altWanted = (altDepsAll || [])
       .filter(d => d.line?.product === 'suburban')
-      .filter(d => !arriveAltglienickeIso || new Date(d.when || d.plannedWhen).getTime() >= new Date(arriveAltglienickeIso).getTime())
-      .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen));
-
-    const altS9Any = altAfterArr
-      .filter(d => norm(d.line?.name) === 'S9')
+      .filter(d => altglienickeAllowed(d.line?.name, bestDest(d))) // includes S85 if exists
+      .filter(d => {
+        const t = new Date(d.when || d.plannedWhen).getTime();
+        return arrAltMs ? (t > arrAltMs) : (t > Date.now());
+      })
+      .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen))
       .slice(0, 5);
 
-    const altS9Spandau = altAfterArr
-      .filter(d => norm(d.line?.name) === 'S9')
-      .filter(d => bestDest(d).toLowerCase().includes('spandau'))
-      .slice(0, 5);
+    $('connections').innerHTML = `
+      <div class="muted">${escapeHtml(cfg.homeStopA)} → ${escapeHtml(cfg.homeTargetA)}</div>
+      <div style="font-weight:900; margin:4px 0 8px;">Arrive ~ ${fmtTime(arriveAdlershofIso)}</div>
+      ${renderDepartureTable(`${cfg.homeTargetA}: S9/S8/S85 (+S8 Blankenburg)`, adlCity)}
+      <div class="sep"></div>
+      <div class="muted">${escapeHtml(cfg.homeStopB)} → ${escapeHtml(cfg.homeTargetB)}</div>
+      <div style="font-weight:900; margin:4px 0 8px;">Arrive ~ ${fmtTime(arriveAltglienickeIso)}</div>
+      ${renderDepartureTable(`${cfg.homeTargetB}: S9 (Spandau) + S85 if present`, altWanted)}
+    `;
 
-    const altS9ToShow = altS9Spandau.length ? altS9Spandau : altS9Any;
-
-    $('connections').innerHTML =
-      `<div class="muted">${escapeHtml(cfg.homeStopA)} → ${escapeHtml(cfg.homeTargetA)}</div>
-       <div style="font-weight:800; margin:4px 0 8px;">Arrive ~ ${fmtTime(arriveAdlershofIso)}</div>
-       ${renderDepartureTable(`${cfg.homeTargetA}: next S9/S8/S85 towards city`, adlCity)}
-       <div style="height:12px"></div>
-       <div class="muted">${escapeHtml(cfg.homeStopB)} → ${escapeHtml(cfg.homeTargetB)}</div>
-       <div style="font-weight:800; margin:4px 0 8px;">Arrive ~ ${fmtTime(arriveAltglienickeIso)}</div>
-       ${renderDepartureTable(
-          `${cfg.homeTargetB}: ${altS9Spandau.length ? 'next S9 → Spandau' : 'next S9 (Spandau not found in window; showing any S9)'}`,
-          altS9ToShow
-        )}
-      `;
-
-    // ---------- Home comparison: earliest catchable S9 → Spandau after arrival ----------
+    // Comparison: earliest catchable S9 → Spandau (after arrival) from each target station
     async function nextS9SpandauAfter(stationId, arrivalIso) {
-      const depsAll = await getDepartures(stationId, { results: 160, duration: 180 });
+      const depsAll = await getDepartures(stationId, { busOnly: false, results: 260, duration: 240 });
       const arrMs = arrivalIso ? new Date(arrivalIso).getTime() : Date.now();
       const cand = (depsAll || [])
         .filter(d => d.line?.product === 'suburban')
         .filter(d => norm(d.line?.name) === 'S9')
-        .filter(d => bestDest(d).toLowerCase().includes('spandau'))
-        .filter(d => new Date(d.when || d.plannedWhen).getTime() >= arrMs)
+        .filter(d => containsAny(bestDest(d), ['Spandau']))
+        .filter(d => new Date(d.when || d.plannedWhen).getTime() > arrMs)
         .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen))[0];
       return cand || null;
     }
 
-    function totalMinsToBoard(arrivalIso, s9Dep) {
-      if (!arrivalIso || !s9Dep) return null;
-      const depIso = s9Dep.when || s9Dep.plannedWhen;
-      return Math.max(0, Math.round((new Date(depIso).getTime() - Date.now()) / 60000));
+    function totalMinsToBoard(dep) {
+      if (!dep) return null;
+      return minutesFromNow(dep.when || dep.plannedWhen);
     }
-
-    function waitMins(arrivalIso, s9Dep) {
-      if (!arrivalIso || !s9Dep) return null;
-      const depIso = s9Dep.when || s9Dep.plannedWhen;
-      return Math.max(0, Math.round((new Date(depIso).getTime() - new Date(arrivalIso).getTime()) / 60000));
+    function waitMins(arrivalIso, dep) {
+      if (!arrivalIso || !dep) return null;
+      const depIso = dep.when || dep.plannedWhen;
+      const diffMs = new Date(depIso).getTime() - new Date(arrivalIso).getTime();
+      if (diffMs <= 0) return null;
+      return Math.max(1, Math.ceil(diffMs / 60000));
     }
 
     const [s9FromAdl, s9FromAlt] = await Promise.all([
@@ -420,16 +509,15 @@
     const optA = {
       label: `${cfg.homeStopA} → ${cfg.homeTargetA} → S9 (Spandau)`,
       arrive: arriveAdlershofIso,
-      s9: s9FromAdl,
-      total: totalMinsToBoard(arriveAdlershofIso, s9FromAdl),
+      dep: s9FromAdl,
+      total: totalMinsToBoard(s9FromAdl),
       wait: waitMins(arriveAdlershofIso, s9FromAdl),
     };
-
     const optB = {
       label: `${cfg.homeStopB} → ${cfg.homeTargetB} → S9 (Spandau)`,
       arrive: arriveAltglienickeIso,
-      s9: s9FromAlt,
-      total: totalMinsToBoard(arriveAltglienickeIso, s9FromAlt),
+      dep: s9FromAlt,
+      total: totalMinsToBoard(s9FromAlt),
       wait: waitMins(arriveAltglienickeIso, s9FromAlt),
     };
 
@@ -437,9 +525,9 @@
     const best = opts[0];
 
     $('comparison').innerHTML = `
-      <div class="muted" style="margin-bottom:8px;">Earliest S9 → Spandau you can catch after arriving at the station</div>
-      <div style="font-weight:800; margin-bottom:10px;">
-        ${best.total == null ? 'No usable S9→Spandau found (check names or time window).' : escapeHtml(best.label)}
+      <div class="muted" style="margin-bottom:8px;">Earliest S9 → Spandau after arriving at the station</div>
+      <div style="font-weight:900; margin-bottom:10px;">
+        ${best.total == null ? 'No usable S9→Spandau found (check stop names/time window).' : escapeHtml(best.label)}
       </div>
       <table>
         <thead><tr><th>Total</th><th>Option</th></tr></thead>
@@ -449,95 +537,109 @@
               <td style="width:80px;"><span class="pill ${(o === best && o.total != null) ? 'ok' : 'warn'}">${o.total == null ? '—' : (o.total + ' min')}</span></td>
               <td>
                 <b>${escapeHtml(o.label)}</b>
-                <div class="muted">Arrive ~ ${fmtTime(o.arrive)} · S9 dep ~ ${fmtTime(o.s9 ? (o.s9.when || o.s9.plannedWhen) : null)} · Wait ~ ${o.wait == null ? '—' : (o.wait + ' min')}</div>
+                <div class="muted">Arrive ~ ${fmtTime(o.arrive)} · S9 dep ~ ${fmtTime(o.dep ? (o.dep.when || o.dep.plannedWhen) : null)} · Wait ~ ${o.wait == null ? '—' : (o.wait + ' min')}</div>
               </td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      ${ (optA.s9 == null || optB.s9 == null) ? `<div class="muted" style="margin-top:10px;">If S9→Spandau is missing: try Settings name “S+U Altglienicke”.</div>` : '' }
     `;
 
     $('homeWork').innerHTML = '';
   }
 
-  // =====================
-  // WORK MODE (unchanged behavior; includes S9 → Flughafen BER)
-  // =====================
   async function loadWork() {
     const cfg = state.cfg;
 
-    const [tiergartenId, hbfId] = await Promise.all([
-      resolveStopId(cfg.workS),
-      resolveStopId(cfg.workHbf),
-    ]);
-
+    const tiergartenId = await resolveStopId(cfg.workS);
     const now = Date.now();
-    const etaTiergarten = new Date(now + cfg.workToTiergartenMin * 60000);
-    const etaHbf = new Date(now + (cfg.workToTiergartenMin + cfg.tiergartenToHbfMin) * 60000);
+    const etaTiergarten = new Date(now + (Number(cfg.workToTiergartenMin) || 7) * 60000);
 
-    const depsSAll = await getDepartures(tiergartenId, { busOnly: false, results: 160, duration: 180 });
-    const lineSet = new Set(cfg.workTiergartenLines.map(norm));
+    const depsSAll = await getDepartures(tiergartenId, { busOnly: false, results: 260, duration: 240 });
 
+    // STRICT: only desired lines + desired destinations (no Spandau/Westkreuz/etc.)
     const depsS = (depsSAll || [])
       .filter(d => d.line?.product === 'suburban')
-      .filter(d => lineSet.has(norm(d.line?.name)))
-      .filter(d => {
-        const line = norm(d.line?.name);
-        const dest = bestDest(d).toLowerCase();
-
-        // only requested:
-        if (line === 'S3') return dest.includes('erkner');
-        if (line === 'S5') return dest.includes('strausberg');
-        if (line === 'S7') return dest.includes('ahrensfelde');
-
-        // S9 to Flughafen BER (not Spandau)
-        if (line === 'S9') {
-          if (dest.includes('spandau')) return false;
-          return dest.includes('flughafen') || dest.includes('ber') || dest.includes('terminal');
-        }
-        return false;
-      })
-      .filter(d => new Date(d.when || d.plannedWhen).getTime() >= etaTiergarten.getTime())
-      .sort((a,b) => new Date(a.when || a.plannedWhen) - new Date(b.when || b.plannedWhen))
-      .slice(0, 8);
-
-    const depsHbfAll = await getDepartures(hbfId, { busOnly: false, results: 200, duration: 180 });
-    const regioLineSet = new Set(cfg.workRegioLines.map(norm));
-    const regioDirKW = cfg.workRegioDirKeywords.map(x => x.toLowerCase());
-
-    const depsRegio = (depsHbfAll || [])
-      .filter(d => ['regional','express'].includes(d.line?.product))
-      .filter(d => regioLineSet.has(norm(d.line?.name)))
-      .filter(d => {
-        const dest = bestDest(d).toLowerCase();
-        return regioDirKW.some(k => dest.includes(k));
-      })
-      .filter(d => new Date(d.when || d.plannedWhen).getTime() >= etaHbf.getTime())
-      .sort((a,b) => new Date(a.when || a.plannedWhen) - new Date(b.when || b.plannedWhen))
-      .slice(0, 6);
+      .filter(d => workSAllowed(d.line?.name, bestDest(d)))
+      .filter(d => new Date(d.when || d.plannedWhen).getTime() > etaTiergarten.getTime())
+      .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen))
+      .slice(0, 10);
 
     const header = `
       <div class="muted" style="margin:6px 0 8px;">
-        Buffers: work → Tiergarten <b>${cfg.workToTiergartenMin} min</b>, Tiergarten → Hbf <b>${cfg.tiergartenToHbfMin} min</b>.
-        Earliest: Tiergarten ≥ <b>${etaTiergarten.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</b>,
-        Hbf ≥ <b>${etaHbf.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</b>.
+        Buffer: work → ${escapeHtml(cfg.workS)} <b>${Number(cfg.workToTiergartenMin) || 7} min</b>.
+        Earliest departure ≥ <b>${etaTiergarten.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</b>.
       </div>
     `;
 
     $('departures').innerHTML =
-      header
-      + renderDepartureTable(`${cfg.workS}: S3→Erkner, S5→Strausberg Nord, S7→Ahrensfelde, S9→Flughafen BER`, depsS)
-      + `<div style="height:10px"></div>`
-      + renderDepartureTable(`${cfg.workHbf}: RE1 (Frankfurt (Oder)) + RE2 (Cottbus)`, depsRegio);
+      header + renderDepartureTable(`${cfg.workS}: only S5→Strausberg, S7→Ahrensfelde, S3→Erkner, S9→Flughafen BER`, depsS);
 
-    $('comparison').innerHTML = depsS.length
-      ? `<div style="font-weight:800;">Next: ${escapeHtml(depsS[0].line?.name)} → ${escapeHtml(bestDest(depsS[0]))} at <b>${fmtTime(depsS[0].when || depsS[0].plannedWhen)}</b></div>`
-      : `<div class="muted">No matching Tiergarten trains found. Try Settings: “S+U Tiergarten”.</div>`;
+    $('comparison').innerHTML = `<div class="muted">Use the Regio modes (Hauptbahnhof/Ostkreuz/Schöneweide) for Regio boards.</div>`;
+    $('connections').innerHTML = '';
+    $('homeWork').innerHTML = '';
+  }
+
+  async function loadRegioMode(which) {
+    const cfg = state.cfg;
+
+    let stopName = '';
+    let title = '';
+    let allowLines = new Set();
+    let destMatchers = [];
+
+    if (which === 'hbf') {
+      stopName = cfg.regioHbfName;
+      title = `${stopName}: RE1/RE2 (your set)`;
+      // User asked: RE2 Cottbus, RE1 Frankfurt (Oder)
+      allowLines = new Set(['RE1','RE 1','RE01','RE 01','RE2','RE 2','RE02','RE 02'].map(norm));
+      destMatchers = [
+        (dest) => (dest.includes('frankfurt') && dest.includes('oder')),
+        (dest) => dest.includes('cottbus'),
+      ];
+    } else if (which === 'ost') {
+      stopName = cfg.regioOstkreuzName;
+      title = `${stopName}: RE1→Genthin, RE7→Dessau, RE2→Hennigsdorf`;
+      allowLines = new Set(['RE1','RE 1','RE01','RE 01','RE2','RE 2','RE02','RE 02','RE7','RE 7','RE07','RE 07'].map(norm));
+      destMatchers = [
+        (dest) => dest.includes('genthin'),
+        (dest) => dest.includes('dessau'),
+        (dest) => dest.includes('hennigsdorf'),
+      ];
+    } else if (which === 'sw') {
+      stopName = cfg.regioSchoneweideName;
+      title = `${stopName}: RB32/RB24 towards Ostkreuz/Hbf`;
+      allowLines = new Set(['RB32','RB 32','RB24','RB 24'].map(norm));
+      destMatchers = [
+        (dest) => dest.includes('ostkreuz'),
+        (dest) => dest.includes('hauptbahnhof') || dest.includes('berlin hbf') || dest === 'hbf',
+      ];
+    } else {
+      throw new Error('Unknown Regio mode');
+    }
+
+    const stopId = await resolveStopId(stopName);
+    const depsAll = await getDepartures(stopId, { busOnly: false, results: 320, duration: 300 });
+
+    const deps = (depsAll || [])
+      .filter(d => ['regional','express'].includes(d.line?.product))
+      .filter(d => allowLines.has(norm(d.line?.name)))
+      .filter(d => {
+        const dest = bestDest(d).toLowerCase();
+        return destMatchers.some(m => m(dest));
+      })
+      .filter(d => minutesFromNow(d.when || d.plannedWhen) != null)
+      .sort((a,b)=>new Date(a.when||a.plannedWhen)-new Date(b.when||b.plannedWhen))
+      .slice(0, 14);
+
+    $('departures').innerHTML = renderDepartureTable(title, deps);
+    $('comparison').innerHTML = `<div class="muted">Regio board mode.</div>`;
+    $('connections').innerHTML = '';
+    $('homeWork').innerHTML = '';
   }
 
   // =====================
-  // App controls
+  // UI wiring
   // =====================
   function applyCfgToInputs() {
     $('inHomeStopA').value = state.cfg.homeStopA;
@@ -545,7 +647,10 @@
     $('inHomeTargetA').value = state.cfg.homeTargetA;
     $('inHomeTargetB').value = state.cfg.homeTargetB;
     $('inWorkS').value = state.cfg.workS;
-    $('inWorkHbf').value = state.cfg.workHbf;
+    $('inWorkWalk').value = String(state.cfg.workToTiergartenMin);
+    $('inRegioHbf').value = state.cfg.regioHbfName;
+    $('inRegioOst').value = state.cfg.regioOstkreuzName;
+    $('inRegioSW').value = state.cfg.regioSchoneweideName;
   }
 
   function readInputsToCfg() {
@@ -554,27 +659,56 @@
     state.cfg.homeTargetA = $('inHomeTargetA').value.trim();
     state.cfg.homeTargetB = $('inHomeTargetB').value.trim();
     state.cfg.workS = $('inWorkS').value.trim();
-    state.cfg.workHbf = $('inWorkHbf').value.trim();
+
+    const w = Number(($('inWorkWalk').value || '').trim());
+    state.cfg.workToTiergartenMin = (Number.isFinite(w) && w > 0) ? w : 7;
+
+    state.cfg.regioHbfName = $('inRegioHbf').value.trim();
+    state.cfg.regioOstkreuzName = $('inRegioOst').value.trim();
+    state.cfg.regioSchoneweideName = $('inRegioSW').value.trim();
+
     state.cache.clear();
   }
 
   function setMode(mode) {
     state.mode = mode;
-    $('tab-home').classList.toggle('active', mode === 'home');
-    $('tab-work').classList.toggle('active', mode === 'work');
-    $('modeTitle').textContent = mode === 'home' ? 'Home mode' : 'Work mode';
-    $('modeSubtitle').textContent = mode === 'home'
-      ? 'Altglienicke buses + S-Bahn options'
-      : 'Salzufer 8 → S Tiergarten → Berlin Hbf (RE1/RE2)';
 
-    const homeCard = document.getElementById('homeOnlyCard');
-    if (homeCard) homeCard.style.display = (mode === 'home') ? 'block' : 'none';
+    ['home','work','hbf','ost','sw'].forEach(m => {
+      const el = document.getElementById(`tab-${m}`);
+      if (el) el.classList.toggle('active', m === mode);
+    });
 
-    if (mode === 'work') {
-      const c = document.getElementById('connections');
-      const hw = document.getElementById('homeWork');
-      if (c) c.innerHTML = '';
-      if (hw) hw.innerHTML = '';
+    // Toggle section visibility
+    const homeCard = $('homeOnlyCard');
+    const comparisonCard = $('comparisonCard');
+
+    if (mode === 'home') {
+      $('modeTitle').textContent = 'Home mode';
+      $('modeSubtitle').textContent = 'Altglienicke buses + S-Bahn options';
+      $('comparisonHint').textContent = 'Home: compares earliest catchable S9 → Spandau after you arrive at the S-Bahn.';
+      homeCard.style.display = 'block';
+      comparisonCard.style.display = 'block';
+    } else if (mode === 'work') {
+      $('modeTitle').textContent = 'Work mode';
+      $('modeSubtitle').textContent = `${state.cfg.workS} (strict directions)`;
+      $('comparisonHint').textContent = 'Work: Regio boards are in separate modes.';
+      homeCard.style.display = 'none';
+      comparisonCard.style.display = 'block';
+    } else if (mode === 'hbf') {
+      $('modeTitle').textContent = 'Hauptbahnhof mode';
+      $('modeSubtitle').textContent = 'Regio board';
+      homeCard.style.display = 'none';
+      comparisonCard.style.display = 'none';
+    } else if (mode === 'ost') {
+      $('modeTitle').textContent = 'Ostkreuz mode';
+      $('modeSubtitle').textContent = 'Regio board';
+      homeCard.style.display = 'none';
+      comparisonCard.style.display = 'none';
+    } else if (mode === 'sw') {
+      $('modeTitle').textContent = 'Schöneweide mode';
+      $('modeSubtitle').textContent = 'Regio board';
+      homeCard.style.display = 'none';
+      comparisonCard.style.display = 'none';
     }
   }
 
@@ -585,7 +719,10 @@
     setStatus('Loading…');
     try {
       if (state.mode === 'home') await loadHome();
-      else await loadWork();
+      else if (state.mode === 'work') await loadWork();
+      else if (state.mode === 'hbf') await loadRegioMode('hbf');
+      else if (state.mode === 'ost') await loadRegioMode('ost');
+      else if (state.mode === 'sw') await loadRegioMode('sw');
       setStatus(`Updated ${started.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`);
     } catch (e) {
       setError(String(e?.message || e));
@@ -607,12 +744,16 @@
     }
   }
 
-  // init
+  // Init
   loadCfg();
   applyCfgToInputs();
 
   $('tab-home').addEventListener('click', () => { setMode('home'); refresh(); });
   $('tab-work').addEventListener('click', () => { setMode('work'); refresh(); });
+  $('tab-hbf').addEventListener('click', () => { setMode('hbf'); refresh(); });
+  $('tab-ost').addEventListener('click', () => { setMode('ost'); refresh(); });
+  $('tab-sw').addEventListener('click', () => { setMode('sw'); refresh(); });
+
   $('btnRefresh').addEventListener('click', refresh);
   $('btnAuto').addEventListener('click', toggleAuto);
 
@@ -626,18 +767,23 @@
     localStorage.removeItem(LS_KEY);
     state.cache.clear();
     state.cfg = {
-      ...state.cfg,
       homeStopA: 'Altglienicke Kirche',
       homeStopB: 'Alter Schönefelder Weg',
       homeTargetA: 'S Adlershof',
       homeTargetB: 'S Altglienicke',
+      homeLinesA: ['260','163'],
+      homeLinesB: ['160'],
       workS: 'S Tiergarten',
-      workHbf: 'Berlin Hbf',
+      workToTiergartenMin: 7,
+      regioHbfName: 'Berlin Hbf',
+      regioOstkreuzName: 'S Ostkreuz',
+      regioSchoneweideName: 'S Schöneweide',
     };
     applyCfgToInputs();
     refresh();
   });
 
+  setMode('home');
   refresh();
 </script>
 </body>
