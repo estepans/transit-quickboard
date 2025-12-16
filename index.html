@@ -182,7 +182,11 @@
       regioSchoneweideName: 'S Schöneweide',
     }
   };
-
+  const HOME_BUS_DEST_ALLOW = {
+    '260': ['Adlershof'],
+    '163': ['Adlershof', 'Schöneweide'],
+    '160': ['Altglienicke'],
+  };
   const LS_KEY = 'btqb_cfg_v3';
 
   // =====================
@@ -234,7 +238,6 @@
     const s = String(hay || '').toLowerCase();
     return needles.some(n => s.includes(String(n).toLowerCase()));
   }
-
   // =====================
   // STRICT direction filters (your requirement)
   // =====================
@@ -244,9 +247,12 @@
   function homeBusAllowed(lineName, dest) {
     const ln = norm(lineName);
     const d = String(dest || '');
-    if (ln === '260' || ln === '163') return containsAny(d, ['Adlershof']);
-    if (ln === '160') return containsAny(d, ['Altglienicke']);
-    return false;
+
+    if (containsAny(d, ['Rudow', 'Schönefeld'])) return false;
+
+    const allow = HOME_BUS_DEST_ALLOW[ln];
+    if (!allow) return false;
+    return containsAny(d, allow);
   }
 
   // Work (Tiergarten):
